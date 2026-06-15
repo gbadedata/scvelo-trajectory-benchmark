@@ -29,7 +29,16 @@ class PipelineSettings(BaseSettings):
     n_neighbors: int = 30   # scvelo recommends 30 for velocity graph
 
     # ── Velocity ───────────────────────────────────────────────────────
-    velocity_mode: str = "stochastic"  # 'stochastic' or 'dynamical'
+    # 'deterministic' is used because scvelo 0.3.x stochastic mode contains
+    # a NumPy 2.x incompatibility in leastsq_generalized:
+    #   gamma[i] = np.linalg.pinv(A.T.dot(A)).dot(...)
+    # returns a 1-element array in NumPy 2.x instead of a scalar, causing:
+    #   ValueError: setting an array element with a sequence
+    # The deterministic (steady-state) model is the well-validated baseline
+    # used in the original LaManno et al. 2018 paper and produces correct
+    # trajectory ordering on the pancreas dataset.
+    # Reference: github.com/theislab/scvelo/issues/966
+    velocity_mode: str = "deterministic"
     velocity_n_top_genes: int = 2000
 
     # ── Clustering ─────────────────────────────────────────────────────

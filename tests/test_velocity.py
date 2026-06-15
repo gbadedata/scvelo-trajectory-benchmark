@@ -39,23 +39,12 @@ def adata_with_moments(preprocessed_adata: ad.AnnData) -> ad.AnnData:
 
 @pytest.fixture
 def adata_with_velocity(adata_with_moments: ad.AnnData) -> ad.AnnData:
-    """AnnData with velocity layer fitted using deterministic mode.
+    """AnnData with velocity layer fitted (deterministic mode).
 
-    Deterministic mode is used for unit tests on synthetic data because
-    the stochastic model's generalised least squares requires the covariance
-    structure of real RNA data. Synthetic data with simulated velocity signal
-    does not have the full second-order moment relationships, causing a
-    numerical failure in scvelo's leastsq_generalized function. The
-    deterministic model is the simpler steady-state baseline that runs
-    correctly on synthetic data.
+    Deterministic mode is the pipeline default and works correctly
+    with both synthetic data and NumPy 2.x.
     """
-    from unittest.mock import patch
-    with patch("src.velocity.settings") as mock:
-        mock.velocity_mode = "deterministic"
-        mock.n_neighbors = 15
-        mock.n_pcs = 10
-        result = fit_velocity(adata_with_moments)
-    return result
+    return fit_velocity(adata_with_moments)
 
 
 @pytest.fixture
@@ -91,32 +80,26 @@ class TestComputeMoments:
 class TestFitVelocity:
     """Test velocity model fitting."""
 
-    @pytest.fixture
-    def adata_det(self, adata_with_moments: ad.AnnData) -> ad.AnnData:
-        """Use deterministic mode for synthetic data compatibility."""
-        from unittest.mock import patch
-        with patch("src.velocity.settings") as mock:
-            mock.velocity_mode = "deterministic"
-            mock.n_neighbors = 15
-            mock.n_pcs = 10
-            return fit_velocity(adata_with_moments)
-
-    def test_velocity_layer_added(self, adata_det: ad.AnnData) -> None:
+    def test_velocity_layer_added(self, adata_with_moments: ad.AnnData) -> None:
         """Velocity layer is added after fitting."""
-        assert "velocity" in adata_det.layers
+        result = fit_velocity(adata_with_moments)
+        assert "velocity" in result.layers
 
-    def test_velocity_genes_flagged(self, adata_det: ad.AnnData) -> None:
+    def test_velocity_genes_flagged(self, adata_with_moments: ad.AnnData) -> None:
         """velocity_genes column is added to var."""
-        assert "velocity_genes" in adata_det.var.columns
+        result = fit_velocity(adata_with_moments)
+        assert "velocity_genes" in result.var.columns
 
-    def test_at_least_one_velocity_gene(self, adata_det: ad.AnnData) -> None:
+    def test_at_least_one_velocity_gene(self, adata_with_moments: ad.AnnData) -> None:
         """At least one gene passes velocity gene filter."""
-        n_vel_genes = int(adata_det.var["velocity_genes"].sum())
+        result = fit_velocity(adata_with_moments)
+        n_vel_genes = int(result.var["velocity_genes"].sum())
         assert n_vel_genes > 0
 
-    def test_velocity_shape(self, adata_det: ad.AnnData) -> None:
+    def test_velocity_shape(self, adata_with_moments: ad.AnnData) -> None:
         """Velocity layer has correct shape."""
-        assert adata_det.layers["velocity"].shape == (adata_det.n_obs, adata_det.n_vars)
+        result = fit_velocity(adata_with_moments)
+        assert result.layers["velocity"].shape == (result.n_obs, result.n_vars)
 
 
 class TestComputeVelocityGraph:
@@ -177,43 +160,32 @@ class TestComputeVelocityConfidence:
 class TestRunVelocity:
     """Test the full velocity pipeline."""
 
-    @pytest.fixture
-    def patched_velocity_settings(self):
-        """Patch velocity mode to deterministic for synthetic data."""
-        from unittest.mock import patch
-        with patch("src.velocity.settings") as mock:
-            mock.velocity_mode = "deterministic"
-            mock.n_neighbors = 15
-            mock.n_pcs = 10
-            yield mock
-
     def test_returns_adata_and_report(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         adata, report = run_velocity(preprocessed_adata)
         assert isinstance(adata, ad.AnnData)
         assert isinstance(report, VelocityReport)
 
-    def test_report_mode_correct(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
-    ) -> None:
+    def test_report_mode_correct(self, preprocessed_adata: ad.AnnData) -> None:
+        from config.settings import settings
         _, report = run_velocity(preprocessed_adata)
-        assert report.mode == "deterministic"
+        assert report.mode == settings.velocity_mode
 
     def test_report_n_cells_consistent(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         adata, report = run_velocity(preprocessed_adata)
         assert report.n_cells == adata.n_obs
 
     def test_report_confidence_in_range(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         _, report = run_velocity(preprocessed_adata)
         assert 0.0 <= report.mean_velocity_confidence <= 1.0
 
     def test_report_vpt_range_valid(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         _, report = run_velocity(preprocessed_adata)
         lo, hi = report.velocity_pseudotime_range
@@ -221,20 +193,20 @@ class TestRunVelocity:
         assert hi <= 1.0
 
     def test_all_velocity_layers_present(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         adata, _ = run_velocity(preprocessed_adata)
         for layer in ["velocity", "Ms", "Mu"]:
             assert layer in adata.layers
 
     def test_velocity_pseudotime_in_obs(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         adata, _ = run_velocity(preprocessed_adata)
         assert "velocity_pseudotime" in adata.obs.columns
 
     def test_velocity_confidence_in_obs(
-        self, preprocessed_adata: ad.AnnData, patched_velocity_settings: object
+        self, preprocessed_adata: ad.AnnData
     ) -> None:
         adata, _ = run_velocity(preprocessed_adata)
         assert "velocity_confidence" in adata.obs.columns

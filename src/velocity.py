@@ -1,21 +1,22 @@
 """RNA velocity computation.
 
-Implements the stochastic RNA velocity model (Bergen et al. 2020)
+Implements the deterministic RNA velocity model (LaManno et al. 2018)
 on the preprocessed pancreas dataset. The pipeline:
 
 1. Compute moments (first- and second-order) across the kNN graph
-2. Fit the stochastic velocity model
+2. Fit the deterministic velocity model
 3. Build the velocity graph (cell-to-cell transition probabilities)
 4. Compute velocity pseudotime (random-walk distance from root)
 5. Compute velocity confidence per cell and gene
 
-The stochastic model is used rather than the dynamical model because:
-- Runtime: stochastic completes in ~2 minutes vs ~30 minutes for dynamical
-- The benchmark compares velocity pseudotime against diffusion pseudotime;
-  both the stochastic and dynamical models produce comparable trajectory
-  ordering on the pancreas dataset
-- The dynamical model's latent_time requires recover_dynamics() which
-  can be numerically unstable on some gene subsets
+The deterministic (steady-state) model is used rather than the stochastic
+model because scvelo 0.3.x contains a NumPy 2.x incompatibility in the
+stochastic model's leastsq_generalized function. The function assigns a
+1-element matrix to a float32 scalar slot (gamma[i] = pinv(A).dot(b)),
+which raises ValueError in NumPy >= 2.0. This is a known upstream issue
+(github.com/theislab/scvelo/issues/966). The deterministic model is the
+well-validated baseline from LaManno et al. 2018 and produces correct
+trajectory ordering on the pancreas endocrinogenesis dataset.
 
 The benchmark evaluation uses velocity_pseudotime, which is computed from
 the velocity graph and is independent of the diffusion pseudotime oracle.
@@ -87,12 +88,16 @@ def compute_moments(adata: ad.AnnData) -> ad.AnnData:
 
 
 def fit_velocity(adata: ad.AnnData) -> ad.AnnData:
-    """Fit stochastic RNA velocity model.
+    """Fit deterministic RNA velocity model.
 
-    The stochastic model estimates velocities by comparing observed
-    spliced/unspliced mRNA levels against their expected steady-state
-    ratio, incorporating second-order moments (covariance) to improve
-    robustness over the basic steady-state model.
+    The deterministic (steady-state) model estimates velocities by
+    identifying the steady-state equilibrium ratio of unspliced to spliced
+    mRNA, then quantifying how each cell deviates from that equilibrium.
+    Cells above the equilibrium are in a state of RNA accumulation (positive
+    velocity); cells below are in a state of RNA degradation (negative
+    velocity).
+
+    This is the original RNA velocity model from LaManno et al. 2018.
 
     Stores velocity estimates in adata.layers['velocity'].
 
