@@ -36,7 +36,9 @@ class PipelineSettings(BaseSettings):
     leiden_resolution: float = 0.8
 
     # ── Known biology (Pancreas endocrinogenesis) ──────────────────────
-    # Root state: Ductal or Ngn3 low EP (earliest progenitors)
+    # Root state for diffusion pseudotime computation.
+    # Ductal cells are the earliest progenitors in the endocrine lineage.
+    # dpt_pseudotime is computed via sc.tl.dpt() rooted here during Phase 2.
     root_cell_type: str = "Ductal"
     # Terminal fates for branch recovery benchmark
     terminal_cell_types: list[str] = ["Alpha", "Beta", "Delta", "Epsilon"]
