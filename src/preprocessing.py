@@ -56,12 +56,16 @@ class PreprocessingReport:
 def filter_and_normalise(adata: ad.AnnData) -> ad.AnnData:
     """Filter genes and normalise spliced and unspliced count matrices.
 
-    Uses scvelo's preprocessing functions for consistent handling of
-    both spliced and unspliced layers. The steps are:
-    1. Filter genes with insufficient shared counts (scvelo)
-    2. Normalise each cell to the same total count (scvelo)
-    3. Select highly variable genes (scanpy, on spliced counts)
-    4. Log1p transform (scanpy)
+    Follows the canonical scvelo preprocessing pipeline:
+    1. Filter genes with insufficient shared counts across both layers
+    2. Normalise each cell to the same total count (both layers consistently)
+    3. Log1p transform on the main spliced count matrix
+
+    HVG selection is not done here. scvelo.pp.moments (Phase 3) computes
+    PCA internally on the top variance genes and handles HVG selection as
+    part of the smoothing step. Running sc.pp.highly_variable_genes before
+    log1p causes a ValueError (bins contain infinity) because some genes
+    have near-zero mean after per-cell normalisation.
 
     Args:
         adata: Raw AnnData with spliced/unspliced layers.
@@ -74,20 +78,9 @@ def filter_and_normalise(adata: ad.AnnData) -> ad.AnnData:
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
-        # Step 1: filter genes by minimum shared counts across both layers
         scv.pp.filter_genes(adata, min_shared_counts=20)
-        # Step 2: normalise per cell (both layers consistently)
         scv.pp.normalize_per_cell(adata)
 
-    # Step 3: HVG selection on the normalised (not yet log-transformed) counts
-    sc.pp.highly_variable_genes(
-        adata,
-        n_top_genes=settings.n_top_genes,
-        flavor="seurat",
-        subset=True,
-    )
-
-    # Step 4: log1p transform
     sc.pp.log1p(adata)
 
     logger.info(
