@@ -1,0 +1,46 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Data (too large for git)
+data/*.h5ad
+data/*.h5
+data/*.csv
+data/Pancreas/
+!data/.gitkeep
+
+# Generated evidence
+evidence/figures/*.png
+evidence/figures/*.pdf
+!evidence/figures/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
