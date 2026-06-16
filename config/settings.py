@@ -51,16 +51,26 @@ class PipelineSettings(BaseSettings):
     root_cell_type: str = "Ductal"
     # Terminal fates for branch recovery benchmark
     terminal_cell_types: list[str] = ["Alpha", "Beta", "Delta", "Epsilon"]
-    # Full known ordering from progenitor to terminal
+    # Known ordering for rank preservation benchmark (Task 2).
+    # Only the linear progenitor progression is tested -- the four terminal
+    # fates (Alpha, Beta, Delta, Epsilon) branch simultaneously from
+    # Pre-endocrine and have no defined relative ordering among themselves.
+    # Testing Beta < Alpha < Delta would impose a false linear ordering on
+    # what is a biological fan-out. The benchmark correctly stops at the
+    # Pre-endocrine -> terminal transition.
     known_ordering: list[str] = [
         "Ductal",
         "Ngn3 low EP",
         "Ngn3 high EP",
         "Pre-endocrine",
-        "Beta",
-        "Alpha",
-        "Delta",
-        "Epsilon",
+        "Alpha",     # representative terminal fate: Pre-endocrine -> Alpha
+    ]
+    # Terminal comparison pairs to test separately (each vs Pre-endocrine)
+    terminal_ordering_pairs: list[list[str]] = [
+        ["Pre-endocrine", "Alpha"],
+        ["Pre-endocrine", "Beta"],
+        ["Pre-endocrine", "Delta"],
+        ["Pre-endocrine", "Epsilon"],
     ]
 
     # ── Benchmark ──────────────────────────────────────────────────────
