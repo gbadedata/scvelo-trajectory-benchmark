@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "timestamp": "2026-06-16T08:43:24.609507+00:00",
+    "dataset": "Pancreas endocrinogenesis (Bastidas-Ponce 2019)",
+    "runtime_seconds": 47.2
+  },
+  "pipeline": {
+    "n_cells": 3696,
+    "n_genes": 7197,
+    "n_velocity_genes": 1598,
+    "velocity_mode": "deterministic",
+    "mean_velocity_confidence": 0.7053,
+    "dpt_pseudotime_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "benchmark": {
+    "task1_trajectory_recovery": {
+      "spearman_rho": 0.8926,
+      "pvalue": 0.0,
+      "n_cells": 3696,
+      "passes": true
+    },
+    "task2_rank_preservation": {
+      "pairs_passing": "5/7",
+      "pct_passing": 71.4,
+      "passes": false
+    },
+    "task3_hidden_branch": {
+      "hidden_type": "Epsilon",
+      "rho_full": 0.8926,
+      "rho_masked": 0.8897,
+      "rho_drop": 0.0029,
+      "ordering_preserved": true
+    }
+  },
+  "validators": [
+    {
+      "name": "root_cell_ordering",
+      "passed": true,
+      "score": 1.0,
+      "details": "Root type 'Ductal' (mean_vpt=0.170) has lower velocity pseudotime than 4/4 terminal types."
+    },
+    {
+      "name": "velocity_gene_coverage",
+      "passed": true,
+      "score": 1.0,
+      "details": "1598/7197 genes (22.2%) identified as velocity genes."
+    },
+    {
+      "name": "velocity_confidence",
+      "passed": true,
+      "score": 0.9404,
+      "details": "Mean velocity confidence: 0.7053. Cells with confidence > 0.75: 40.8%."
+    }
+  ]
+}
