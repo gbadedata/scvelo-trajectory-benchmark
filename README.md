@@ -313,13 +313,3 @@ Bergen et al. (2020). Generalizing RNA velocity to transient cell states through
 La Manno et al. (2018). RNA velocity of single cells. *Nature*, 560, 494-498.
 
 Haghverdi et al. (2016). Diffusion pseudotime robustly reconstructs lineage branching. *Nature Methods*, 13, 845-848.
-
----
-
-## Author
-
-**O.J. Odimayo** -- Bioinformatics Data Engineer
-
-MSc Applied Data Science | BSc Genetics and Molecular Biology
-
-[github.com/gbadedata](https://github.com/gbadedata) · [linkedin.com/in/oluwagbade-odimayo-](https://www.linkedin.com/in/oluwagbade-odimayo-) · oluwagbadeodimayo@gmail.com
